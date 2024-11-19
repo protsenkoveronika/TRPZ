@@ -1,77 +1,90 @@
-import time
-import datetime
 import threading
-import tkinter as tk
-from tkinter import messagebox
-from tkinter import ttk
-from report import Report
+import time
+from tkinter import Tk, Label, StringVar
+from processor_usage import ProcessorUsage
+from memory_usage import MemoryUsage
 from keyboard_monitor import KeyboardMonitor
 from mouse_monitor import MouseMonitor
-from memory_usage import MemoryUsage
-from processor_usage import ProcessorUsage
 from window_monitor import WindowMonitor
-from repositories.memory_repository import MemoryRepository
-from repositories.processor_repository import ProcessorRepository
-from repositories.window_repository import WindowRepository
-from repositories.monitor_repository import MonitorRepository
-
+from activity_monitor_iterator import MonitorIterator, WidgetIterator
 
 class ActivityMonitor:
     def __init__(self, db_file):
-        self.monitorrepo = MonitorRepository(db_file)
-        self.windowrepo = WindowRepository(db_file)
-        self.memoryrepo = MemoryRepository(db_file)
-        self.processorrepo = ProcessorRepository(db_file)
-        self.windowclass = WindowMonitor(db_file)
-        self.memoryclass = MemoryUsage(db_file)
-        self.processorclass = ProcessorUsage(db_file)
-        self.mouseclass = MouseMonitor(db_file)
-        self.keyboardclass = KeyboardMonitor(db_file)
-        self.reportclass = Report(db_file)
+        self.db_file = db_file
+        self.monitors = [
+            ProcessorUsage(db_file),
+            MemoryUsage(db_file),
+            WindowMonitor(db_file),
+            # KeyboardMonitor(),
+            # MouseMonitor(),
+        ]
+        self.current_index = 0
         self.is_monitoring = False
-        self.computer_usage_time = 0
-        self.mouse_activity_flag = True
-        self.keyboard_activity_flag = True
-        self.cpu_usage = []
-        self.memory_usage = []
-        self.window_usage = {}
-        self.current_key = ""
-        self.current_position = (0, 0)
+        self.data = {}
 
-    def update_data(self, cpu_data, memory_data, window_usage, current_key, current_position):
-        # Implement
+        # створення Tkinter root
+        self.root = Tk()
+        self.root.title("Activity Monitor")
 
-    def generate_daily_report(self, date):
-        # Implement
+        # GUI змінні для відображення
+        self.gui_vars = {
+            "cpu_usage": StringVar(value="CPU Usage: Loading..."),
+            "memory_usage": StringVar(value="Memory Usage: Loading..."),
+            "active_window": StringVar(value="Active Window: Loading..."),
+        }
 
-    def generate_multi_report(self, date_from, date_to):
-        # Implement
+        # віджети для відображення
+        self.widgets = [
+            Label(self.root, textvariable=self.gui_vars["cpu_usage"], font=("Arial", 14)),
+            Label(self.root, textvariable=self.gui_vars["memory_usage"], font=("Arial", 14)),
+            Label(self.root, textvariable=self.gui_vars["active_window"], font=("Arial", 14)),
+        ]
 
-    def display_report(self):
-        # Implement
+        for widget in self.widgets:
+            widget.pack(pady=5)
 
-    def display_report(self, report_data):
-        # Implement
+        # Ініціалізація ітератора для віджетів
+        self.widget_iterator = WidgetIterator(self.widgets)
 
-    def display_historical_data(self, historical_data):
-        # Implement
+        # автоматичний запуск моніторингу
+        self.start_monitoring()
 
-    def check_activity(self, historical_data):
-        # Implement
 
-    def count_activity_time(self):
-        # Implement
-
-    def save_activity_time(self):
-        # Implement
-
-    def check_midnight_reset(self):
-        # Implement
+    def __iter__(self):
+        return MonitorIterator(self.monitors)
 
     def start_monitoring(self):
-        # Implement
+        self.is_monitoring = True
+        monitoring_thread = threading.Thread(target=self._monitoring_loop)
+        monitoring_thread.daemon = True
+        monitoring_thread.start()
+
+    def _monitoring_loop(self):
+        while self.is_monitoring:
+            for monitor in self:
+                data = monitor.collect_data()
+                self.data[monitor.__class__.__name__] = data
+
+            # оновлення GUI змінних
+            for widget in self.widget_iterator:
+                if widget == self.widgets[0]: 
+                    self.gui_vars["cpu_usage"].set(
+                        f"CPU Usage: {self.data.get('ProcessorUsage', {}).get('cpu_usage', 'N/A')}%"
+                    )
+                elif widget == self.widgets[1]:
+                    self.gui_vars["memory_usage"].set(
+                        f"Memory Usage: {self.data.get('MemoryUsage', {}).get('memory_usage', 'N/A')} MB"
+                    )
+                elif widget == self.widgets[2]:
+                    self.gui_vars["active_window"].set(
+                        f"Active Window: {self.data.get('WindowMonitor', {}).get('active_window', 'N/A')}"
+                    )
+                    
+            time.sleep(1)
 
     def stop_monitoring(self):
-        # Implement
+        self.is_monitoring = False
 
-        
+    def start_gui(self):
+        self.root.protocol("WM_DELETE_WINDOW", lambda: (self.stop_monitoring(), self.root.destroy()))
+        self.root.mainloop()

@@ -3,9 +3,9 @@ import datetime
 from repositories.memory_repository import MemoryRepository
 
 class MemoryUsage:
-    def __init__(self, db_file):
+    def __init__(self, db_file, gui_var):
         self.repo = MemoryRepository(db_file)
-        self.db_file = db_file
+        self.gui_var = gui_var
         self.memory_data = [] 
 
     def collect_data(self):
@@ -13,6 +13,10 @@ class MemoryUsage:
         self.memory_data.append(used_memory)
         self.check_hourly_reset()
         return {"memory_usage": used_memory}
+    
+    def update_widget(self):
+        data = self.collect_data()
+        self.gui_var.set(f"Memory Usage: {data['memory_usage']} MB")
 
     def calculate_average_memory_usage(self):
         if not self.memory_data:

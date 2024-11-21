@@ -3,9 +3,9 @@ import datetime
 from repositories.processor_repository import ProcessorRepository
 
 class ProcessorUsage:
-    def __init__(self, db_file):
+    def __init__(self, db_file, gui_var):
         self.repo = ProcessorRepository(db_file)
-        self.db_file = db_file
+        self.gui_var = gui_var
         self.cpu_data = []
 
     def collect_data(self):
@@ -13,6 +13,10 @@ class ProcessorUsage:
         self.cpu_data.append(usage)
         self.check_hourly_reset()
         return {"cpu_usage": usage}
+    
+    def update_widget(self):
+        data = self.collect_data()
+        self.gui_var.set(f"CPU Usage: {data['cpu_usage']}%")
 
     def calculate_average_cpu_usage(self):
         if not self.cpu_data:

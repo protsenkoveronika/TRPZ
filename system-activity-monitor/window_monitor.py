@@ -3,8 +3,9 @@ import pygetwindow as gw  # on Windows
 from repositories.window_repository import WindowRepository
 
 class WindowMonitor:
-    def __init__(self, db_file):
+    def __init__(self, db_file, gui_var):
         self.repo = WindowRepository(db_file)
+        self.gui_var = gui_var
         self.current_window = None
         self.window_usage = {}
 
@@ -25,6 +26,10 @@ class WindowMonitor:
         self.check_midnight_reset()
 
         return {"active_window": self.current_window, "usage_time": self.window_usage[self.current_window]}
+    
+    def update_widget(self):
+        data = self.collect_data()
+        self.gui_var.set(f"Active Window: {data['active_window']}")
 
     def sanitize_window_name(self, window_name):
         if window_name:

@@ -31,17 +31,16 @@ class ProcessorRepository:
         except sqlite3.Error as e:
             print(f"Error inserting CPU usage: {e}")
 
-    def get_processor_usage_by_date(self, date):
+    def get_processor_usage_by_date(self, date_id):
         query = """
-        SELECT ProcessorUsage.timestamp, ProcessorUsage.cpu_usage
+        SELECT timestamp, cpu_usage
         FROM ProcessorUsage
-        JOIN MonitoringDates ON ProcessorUsage.date_id = MonitoringDates.date_id
-        WHERE MonitoringDates.date = ?
+        WHERE date_id = ?
         """
         try:
             cursor = self.connection.cursor()
-            cursor.execute(query, (date,))
+            cursor.execute(query, (date_id,))
             return cursor.fetchall()
         except sqlite3.Error as e:
-            print(f"Error retrieving processor usage data: {e}")
+            print(f"Error retrieving memory usage data: {e}")
             return None

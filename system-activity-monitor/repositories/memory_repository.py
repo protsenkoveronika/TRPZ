@@ -31,16 +31,15 @@ class MemoryRepository:
         except sqlite3.Error as e:
             print(f"Error saving memory usage data: {e}")
 
-    def get_memory_usage_by_date(self, date):
+    def get_memory_usage_by_date(self, date_id):
         query = """
-        SELECT MemoryUsage.timestamp, MemoryUsage.memory_usage, MemoryUsage.total_memory
+        SELECT timestamp, memory_usage, total_memory
         FROM MemoryUsage
-        JOIN MonitoringDates ON MemoryUsage.date_id = MonitoringDates.date_id
-        WHERE MonitoringDates.date = ?
+        WHERE date_id = ?
         """
         try:
             cursor = self.connection.cursor()
-            cursor.execute(query, (date,))
+            cursor.execute(query, (date_id,))
             return cursor.fetchall()
         except sqlite3.Error as e:
             print(f"Error retrieving memory usage data: {e}")

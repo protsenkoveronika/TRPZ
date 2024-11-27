@@ -25,6 +25,8 @@ class WindowMonitor:
         
         self.check_midnight_reset()
 
+        # print(self.window_usage)
+
         return {"active_window": self.current_window, "usage_time": self.window_usage[self.current_window]}
     
     def update_widget(self):
@@ -41,6 +43,9 @@ class WindowMonitor:
             return sanitized_name.strip()
         return "Unknown"
 
+    def get_window_usage(self):
+        print(self.window_usage)
+        return self.window_usage
 
     def update_window_usage(self, window_name):
         usage_time = self.window_usage.get(window_name, 0)

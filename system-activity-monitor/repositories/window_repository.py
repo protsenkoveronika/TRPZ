@@ -61,14 +61,18 @@ class WindowRepository:
 
     def get_window_usage_by_date(self, date):
         query = """
-        SELECT window_name, usage_time FROM WindowUsage
+        SELECT Windows.name, WindowUsage.time 
+        FROM WindowUsage
         JOIN MonitoringDates ON WindowUsage.date_id = MonitoringDates.date_id
-        WHERE MonitoringDates.date = ?
+        JOIN Windows ON WindowUsage.window_id = Windows.window_id
+        WHERE MonitoringDates.date = ?;
         """
         try:
             cursor = self.connection.cursor()
             cursor.execute(query, (date,))
-            return cursor.fetchall()
+            data = cursor.fetchall()
+            print("Data returned:", data)
+            return data
         except sqlite3.Error as e:
             print(f"Error fetching window usage for date {date}: {e}")
             return []

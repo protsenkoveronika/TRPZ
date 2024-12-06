@@ -3,12 +3,13 @@ import threading
 import time
 import datetime
 from tkinter import Tk, Text, Scrollbar, Label, StringVar, Button, Toplevel, Entry, Frame, Radiobutton, IntVar
-from processor_usage import ProcessorUsage
-from memory_usage import MemoryUsage
-# from keyboard_monitor import KeyboardMonitor
-# from mouse_monitor import MouseMonitor
-from window_monitor import WindowMonitor
+from monitors.processor_usage import ProcessorUsage
+from monitors.memory_usage import MemoryUsage
+from monitors.keyboard_monitor import KeyboardMonitor
+from monitors.mouse_monitor import MouseMonitor
+from monitors.window_monitor import WindowMonitor
 from services.activity_monitor_iterator import MonitorIterator
+from services.activity_monitor_abstract_factory import ConcreteWindowsFactory
 from services.activity_monitor_command import GenerateDailyReportCommand, GeneratePeriodicReportCommand, ReportInvoker
 from report import Report
 
@@ -18,30 +19,34 @@ class ActivityMonitor:
         self.report = Report(self.db_file)
         self.current_index = 0
         self.is_monitoring = False
-        # self.data = {}
+        self.is_active = False
+        self.factory = ConcreteWindowsFactory()
 
         self.root = Tk()
         self.root.title("Activity Monitor")
-
 
         self.gui_vars = {
             "cpu_usage": StringVar(value="CPU Usage: Loading..."),
             "memory_usage": StringVar(value="Memory Usage: Loading..."),
             "active_window": StringVar(value="Active Window: Loading..."),
+            "mouse_position": StringVar(value="Mouse Activity: Loading..."),
+            "keyboard_activity": StringVar(value="Keyboard Activity: Loading..."),
         }
 
         self.monitors = [
-            ProcessorUsage(db_file, self.gui_vars["cpu_usage"]),
-            MemoryUsage(db_file, self.gui_vars["memory_usage"]),
-            WindowMonitor(db_file, self.gui_vars["active_window"]),
-            # KeyboardMonitor(),
-            # MouseMonitor(),
+            self.factory.create_processor_monitor(self.db_file, self.gui_vars["cpu_usage"]),
+            self.factory.create_memory_monitor(self.db_file, self.gui_vars["memory_usage"]),
+            self.factory.create_window_monitor(self.db_file, self.gui_vars["active_window"]),
+            self.factory.create_mouse_monitor(self.gui_vars["mouse_position"]),
+            self.factory.create_keyboard_monitor(self.gui_vars["keyboard_activity"]),
         ]
 
         self.widgets = [
             Label(self.root, textvariable=self.gui_vars["cpu_usage"], font=("Arial", 14)),
             Label(self.root, textvariable=self.gui_vars["memory_usage"], font=("Arial", 14)),
             Label(self.root, textvariable=self.gui_vars["active_window"], font=("Arial", 14)),
+            Label(self.root, textvariable=self.gui_vars["mouse_position"], font=("Arial", 14)),
+            Label(self.root, textvariable=self.gui_vars["keyboard_activity"], font=("Arial", 14)),
         ]
 
         for widget in self.widgets:

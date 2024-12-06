@@ -4,7 +4,7 @@ from repositories.monitor_repository import MonitorRepository
 from repositories.memory_repository import MemoryRepository
 from repositories.processor_repository import ProcessorRepository
 from repositories.window_repository import WindowRepository
-from window_monitor import WindowMonitor
+from monitors.window_monitor import WindowMonitor
 
 class Report:
     def __init__(self, db_file):

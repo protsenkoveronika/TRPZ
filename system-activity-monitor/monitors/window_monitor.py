@@ -33,6 +33,9 @@ class WindowMonitor:
         data = self.collect_data()
         self.gui_var.set(f"Active Window: {data['active_window']}")
 
+    def save_data(self):
+        pass
+
     def sanitize_window_name(self, window_name):
         if window_name:
             parts = window_name.rsplit(' - ', 1)

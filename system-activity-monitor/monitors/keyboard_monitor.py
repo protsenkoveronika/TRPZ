@@ -7,7 +7,7 @@ class KeyboardMonitor:
         self.current_key = None
         self.activity_flag = True
         self.last_keypress_time = time.time()
-        self.inactivity_threshold = 600
+        self.inactivity_threshold = 10
         self.gui_var = gui_var
 
         self.listener = keyboard.Listener(
@@ -46,6 +46,7 @@ class KeyboardMonitor:
 
         activity_status = "Active" if data["activity_flag"] else "Inactive"
         self.gui_var.set(f"{key_info}  |  Activity: {activity_status}")
+
 
     def check_inactivity(self):
         while True:

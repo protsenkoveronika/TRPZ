@@ -3,14 +3,9 @@ import threading
 import time
 import datetime
 from tkinter import Tk, Text, Scrollbar, Label, StringVar, Button, Toplevel, Entry, Frame, Radiobutton, IntVar
-from monitors.processor_usage import ProcessorUsage
-from monitors.memory_usage import MemoryUsage
-from monitors.keyboard_monitor import KeyboardMonitor
-from monitors.mouse_monitor import MouseMonitor
-from monitors.window_monitor import WindowMonitor
-from services.activity_monitor_iterator import MonitorIterator
-from services.activity_monitor_abstract_factory import ConcreteWindowsFactory
-from services.activity_monitor_command import GenerateDailyReportCommand, GeneratePeriodicReportCommand, ReportInvoker
+from patterns.activity_monitor_iterator import MonitorIterator
+from patterns.activity_monitor_abstract_factory_bridge import ConcreteWindowsFactory
+from patterns.activity_monitor_command import GenerateDailyReportCommand, GeneratePeriodicReportCommand, ReportInvoker
 from report import Report
 
 class ActivityMonitor:
@@ -20,6 +15,9 @@ class ActivityMonitor:
         self.current_index = 0
         self.is_monitoring = False
         self.is_active = False
+        self.active_time = 0
+        self.last_activity_time = None
+        self.activity_start_time = None
         self.factory = ConcreteWindowsFactory()
 
         self.root = Tk()
@@ -37,6 +35,17 @@ class ActivityMonitor:
             self.factory.create_processor_monitor(self.db_file, self.gui_vars["cpu_usage"]),
             self.factory.create_memory_monitor(self.db_file, self.gui_vars["memory_usage"]),
             self.factory.create_window_monitor(self.db_file, self.gui_vars["active_window"]),
+            self.factory.create_mouse_monitor(self.gui_vars["mouse_position"]),
+            self.factory.create_keyboard_monitor(self.gui_vars["keyboard_activity"]),
+        ]
+
+        self.saveable_monitors = [
+            self.factory.create_processor_monitor(self.db_file, self.gui_vars["cpu_usage"]),
+            self.factory.create_memory_monitor(self.db_file, self.gui_vars["memory_usage"]),
+            self.factory.create_window_monitor(self.db_file, self.gui_vars["active_window"])
+        ]
+
+        self.flag_monitors = [
             self.factory.create_mouse_monitor(self.gui_vars["mouse_position"]),
             self.factory.create_keyboard_monitor(self.gui_vars["keyboard_activity"]),
         ]
@@ -59,6 +68,8 @@ class ActivityMonitor:
     def start_monitoring(self):
         if not self.is_monitoring:
             self.is_monitoring = True
+            self.is_active = True
+            self.activity_start_time = time.time()
             print(f"Monitoring started (is_monitoring: {self.is_monitoring})")
             monitoring_thread = threading.Thread(target=self._monitoring_loop)
             monitoring_thread.daemon = True
@@ -74,10 +85,26 @@ class ActivityMonitor:
             for monitor in self.monitors:
                 monitor.update_widget()
 
+            self.check_activity()
+
             time.sleep(1)
         pass
 
+    def check_activity(self):
+        self.is_active = any(monitor.get_activity_flag() for monitor in self.flag_monitors)
+
+        if self.is_active:
+            self.active_time += time.time() - self.activity_start_time
+
+        self.activity_start_time = time.time()
+        print(f"System Active: {self.is_active}")
+
+        print(f"Total active time: {self.active_time:.2f} seconds.")
+
+
     def stop_monitoring(self):
+        for monitor in self.saveable_monitors:
+            monitor.save_data()
         self.is_monitoring = False
 
     def start_gui(self):

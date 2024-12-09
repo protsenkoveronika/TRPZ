@@ -8,7 +8,7 @@ class MouseMonitor:
         self.last_click_event = None
         self.activity_flag = True
         self.last_mouse_activity_time = time.time()
-        self.inactivity_threshold = 600
+        self.inactivity_threshold = 10
         self.gui_var = gui_var
         
         self.listener = mouse.Listener(
@@ -38,6 +38,7 @@ class MouseMonitor:
         activity_status = "Active" if data['activity_flag'] else "Inactive"
 
         self.gui_var.set(f"{position}  |  {last_click}  |  Activity: {activity_status}")
+
 
     def on_move(self, x, y):
         self.current_position = (x, y)

@@ -18,6 +18,9 @@ class ProcessorUsage:
         data = self.collect_data()
         self.gui_var.set(f"CPU Usage: {data['cpu_usage']}%")
 
+    def save_data(self):
+        pass
+
     def calculate_average_cpu_usage(self):
         if not self.cpu_data:
             return 0

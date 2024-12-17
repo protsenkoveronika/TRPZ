@@ -8,7 +8,7 @@ class WindowRepository:
     def connect(self):
         try:
             self.connection = sqlite3.connect(self.db_file)
-            print("Connected to database successfully.")
+            # print("Connected to database successfully.")
         except sqlite3.Error as e:
             print(f"Error connecting to database: {e}")
 
@@ -18,46 +18,34 @@ class WindowRepository:
         except sqlite3.Error as e:
             print(f"Error closing the database: {e}")
 
-    def insert_window_usage(self, window_name, usage_time):
-        window_id = self.get_window_id_by_name(window_name)
-        query = """
-        INSERT INTO WindowUsage (winusage_id, date_id, window_id, time)
-        VALUES ((SELECT IFNULL(MAX(winusage_id), 0) + 1 FROM WindowUsage), (SELECT date_id FROM MonitoringDates ORDER BY date_id DESC LIMIT 1), ?, ?)
-        """
+    def get_or_add_window_id(self, name):
         try:
             cursor = self.connection.cursor()
-            cursor.execute(query, (window_id, usage_time))
-            self.connection.commit()
-            print(f"Window usage for {window_name} saved: {usage_time} seconds.")
-        except sqlite3.Error as e:
-            print(f"Error saving window usage: {e}")
-
-    def get_window_id_by_name(self, window_name):
-        query = "SELECT window_id FROM Windows WHERE name = ?"
-        try:
-            cursor = self.connection.cursor()
-            cursor.execute(query, (window_name,))
+            cursor.execute("SELECT window_id FROM Windows WHERE name = ?", (name,))
             result = cursor.fetchone()
             if result:
                 return result[0]
-            else:
-                return self.insert_new_window(window_name)
+            cursor.execute("INSERT INTO Windows (name) VALUES (?)", (name,))
+            self.connection.commit()
+            return cursor.lastrowid
         except sqlite3.Error as e:
-            print(f"Error getting window ID for {window_name}: {e}")
+            print(f"Error in get_or_add_window_id: {e}")
             return None
 
-    def insert_new_window(self, window_name):
-        query = "INSERT INTO Windows (name) VALUES (?)"
+    def insert_window_usage(self, date_id, window_id, time):
+        query = """
+        INSERT INTO WindowUsage (winusage_id, date_id, window_id, time)
+        VALUES ((SELECT IFNULL(MAX(winusage_id), 0) + 1 FROM WindowUsage), ?, ?, ?)
+        """
         try:
             cursor = self.connection.cursor()
-            cursor.execute(query, (window_name,))
+            cursor.execute(query, (date_id, window_id, time))
             self.connection.commit()
-            new_window_id = cursor.lastrowid
-            print(f"New window {window_name} inserted with ID: {new_window_id}")
-            return new_window_id
+            # print(f"Window usage saved: Date ID {date_id}, Window ID {window_id}, Time {time} seconds.")
         except sqlite3.Error as e:
-            print(f"Error inserting new window {window_name}: {e}")
-            return None    
+            print(f"Error saving window usage: {e}")
+            raise
+
 
     def get_window_usage_by_date(self, date):
         query = """
@@ -71,8 +59,29 @@ class WindowRepository:
             cursor = self.connection.cursor()
             cursor.execute(query, (date,))
             data = cursor.fetchall()
-            print("Data returned:", data)
+            # print("Window usage data for date", date, ":", data)
             return data
         except sqlite3.Error as e:
             print(f"Error fetching window usage for date {date}: {e}")
             return []
+
+    def delete_last_window_usage(self):
+            try:
+                cursor = self.connection.cursor()
+                # Delete the last entry based on the most recent timestamp
+                cursor.execute("""
+                    DELETE FROM WindowUsage
+            WHERE winusage_id = ;
+                """)
+                self.connection.commit()
+                print("Last processor usage deleted successfully.")
+            except sqlite3.Error as e:
+                print(f"Error deleting last processor usage: {e}")
+
+
+# repo = WindowRepository("db.sqlite")
+
+# resp = repo.delete_last_window_usage()
+
+# repo.close()
+# print(resp)

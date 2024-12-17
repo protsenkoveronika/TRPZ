@@ -1,18 +1,32 @@
+from collections import defaultdict
 import datetime
-import json
-from repositories.monitor_repository import MonitorRepository
+from repositories.computer_usage_repository import ComputerUsageRepository
 from repositories.memory_repository import MemoryRepository
 from repositories.processor_repository import ProcessorRepository
 from repositories.window_repository import WindowRepository
-from monitors.window_monitor import WindowMonitor
 
 class Report:
-    def __init__(self, db_file):
-        # self.monitorrepo = MonitorRepository(db_file)
+    def __init__(self, db_file, processor_monitor, memory_monitor, window_monitor, computer_usage_monitor):
+        self.computerusagerepo = ComputerUsageRepository(db_file)
         self.memoryrepo = MemoryRepository(db_file)
         self.processorrepo = ProcessorRepository(db_file)
         self.windowrepo = WindowRepository(db_file)
-        self.windowmonitor = WindowMonitor(db_file, None)
+        self.processormonitor = processor_monitor
+        self.memorymonitor = memory_monitor
+        self.computerusagemonitor = computer_usage_monitor
+        self.windowmonitor = window_monitor
+    
+    def aggregate_data(self, data):
+        usage_by_time = defaultdict(list)
+
+        for time, usage in data:
+            usage_by_time[time].append(usage)
+            
+        aggregated_data = {
+            time: sum(usages) for time, usages in usage_by_time.items()
+        }
+
+        return aggregated_data
 
     def generate_daily_report(self, date, report_type):
         try:
@@ -23,29 +37,55 @@ class Report:
             data = {}
                 
             if report_type == 1: # cpu
-                data['processor_usage'] = self.processorrepo.get_processor_usage_by_date(date)
-            elif report_type == 2: # browser usage %
                 if is_current_date(date):
-                    window_usage = self.windowmonitor.get_window_usage()
-                else: 
-                    window_usage = self.windowrepo.get_window_usage_by_date(date)
-                browser_names = ["Chrome", "Firefox", "Safari", "Edge", "Opera"]
-                filtered_data = {name: usage for name, usage in window_usage.items() if any(browser in name for browser in browser_names)}
-                data['browser_usage'] = filtered_data
+                    self.processormonitor.save_data()
+                data = self.processorrepo.get_processor_usage_by_date(date)
+
+            elif report_type == 2: # % browser usage
+                if is_current_date(date):
+                    self.windowmonitor.save_data()
+                    self.computerusagemonitor.save_data()
+                data = self.windowrepo.get_window_usage_by_date(date)
+                data = self.aggregate_data(data)
+                browser_names = ["Google Chrome", "Firefox", "Safari", "Edge", "Opera"]
+                filtered_data = {
+                    name: usage 
+                    for name, usage in data.items() 
+                    if any(browser in name for browser in browser_names)
+                }
+                filtered_sum = sum(filtered_data.values())
+                total_usage_data = self.computerusagerepo.get_computer_usage_by_date(date)
+                total_usage_sum = sum(total_usage_data)
+                if total_usage_sum > 0:
+                    browser_percentage = (filtered_sum / total_usage_sum) * 100
+                else:
+                    browser_percentage = 0
+                formatted_data = {'Total usage': total_usage_sum, 'Browser usage': filtered_sum, 'Percent of browser usage': round(browser_percentage,2)}
+                return formatted_data
+            
             elif report_type == 3: # memory
-                data['memory_usage'] = self.memoryrepo.get_memory_usage_by_date(date)
-            # elif report_type == 4: # computer uptime
-            elif report_type == 5: # programs used 
                 if is_current_date(date):
-                    data['window_usage'] = self.windowmonitor.get_window_usage()
-                else: 
-                    data['window_usage'] = self.windowrepo.get_window_usage_by_date(date)
-            return data
+                    self.memorymonitor.save_data()
+                data = self.memoryrepo.get_memory_usage_by_date(date)
+
+            elif report_type == 4: # computer uptime
+                if is_current_date(date):
+                    self.computerusagemonitor.save_data()
+                data = self.computerusagerepo.get_computer_usage_by_date(date)
+                data={'Total usage': sum(data)}
+                return formatted_data
+                
+            elif report_type == 5: # programs usage
+                if is_current_date(date):
+                    self.windowmonitor.save_data()
+                data = self.windowrepo.get_window_usage_by_date(date)
+                
+            formatted_data = self.aggregate_data(data)
+            return formatted_data
 
         except Exception as e:
             print(f"Error generating daily report: {e}")
             return None
-        
 
     def generate_periodic_report(self, start_date, end_date, report_type):
         try:

@@ -5,6 +5,8 @@ from monitors.memory_usage import MemoryUsage
 from monitors.window_monitor import WindowMonitor
 from monitors.mouse_monitor import MouseMonitor
 from monitors.keyboard_monitor import KeyboardMonitor
+from monitors.computer_usage_monitor import ComputerUsage
+
 
 
 class AbstractFactory(ABC):
@@ -26,6 +28,10 @@ class AbstractFactory(ABC):
 
     @abstractmethod
     def create_keyboard_monitor(self, gui_var) -> AbstractKeyboardMonitor:
+        pass
+
+    @abstractmethod
+    def create_computer_usage_monitor(self, db_file, gui_var) -> AbstractComputerUsageMonitor:
         pass
 
 
@@ -50,6 +56,10 @@ class ConcreteWindowsFactory(AbstractFactory):
     def create_keyboard_monitor(self, gui_var) -> ActivityFlagMonitorAbstraction:
         implementation = KeyboardMonitorImplementation(gui_var)
         return ActivityFlagMonitorAbstraction(implementation)
+    
+    def create_computer_usage_monitor(self, db_file, gui_var) -> ExceptionalMonitorAbstraction:
+        implementation = ComputerUsageMonitorImplementation(db_file, gui_var)
+        return ExceptionalMonitorAbstraction(implementation)
 
 
 class AbstractProcessorMonitor(ABC):
@@ -97,6 +107,18 @@ class AbstractKeyboardMonitor(ABC):
     def get_activity_flag(self) -> bool:
         pass
 
+class AbstractComputerUsageMonitor(ABC):
+    @abstractmethod
+    def update_widget(self):
+        pass
+
+    @abstractmethod
+    def save_data(self):
+        pass
+
+    @abstractmethod
+    def check_activity(self, is_active: bool) -> bool:
+        pass
 
 
 
@@ -116,6 +138,13 @@ class SaveableMonitorAbstraction(BaseMonitorAbstraction):
 class ActivityFlagMonitorAbstraction(BaseMonitorAbstraction):
     def get_activity_flag(self) -> bool:
         return self.implementation.get_activity_flag()
+    
+class ExceptionalMonitorAbstraction(BaseMonitorAbstraction):
+    def save_data(self) -> None:
+        self.implementation.save_data()
+
+    def check_activity(self, is_active: bool) -> bool:
+        return self.implementation.check_activity(is_active)
 
 
 class SaveableMonitorImplementation(ABC):
@@ -136,7 +165,20 @@ class ActivityFlagMonitorImplementation(ABC):
     def get_activity_flag(self) -> bool:
         pass
 
+class ExceptionalMonitorImplementation(ABC):
+    @abstractmethod
+    def perform_update(self) -> None:
+        pass
 
+    @abstractmethod
+    def save_data(self) -> None:
+        pass
+
+    @abstractmethod
+    def check_activity(self) -> None:
+        pass
+    
+    
 class ProcessorMonitorImplementation(SaveableMonitorImplementation):
     def __init__(self, db_file, gui_var):
         self.processor_usage = ProcessorUsage(db_file, gui_var)
@@ -186,3 +228,16 @@ class KeyboardMonitorImplementation(ActivityFlagMonitorImplementation):
 
     def get_activity_flag(self) -> bool:
         return self.keyboard_monitor.activity_flag
+    
+class ComputerUsageMonitorImplementation(ExceptionalMonitorImplementation):
+    def __init__(self, db_file, gui_var):
+        self.computer_usage_monitor = ComputerUsage(db_file, gui_var)
+
+    def perform_update(self) -> None:
+        self.computer_usage_monitor.update_widget()
+
+    def save_data(self) -> None:
+        self.computer_usage_monitor.save_data()
+
+    def check_activity(self, is_active: bool) -> bool:
+        return self.computer_usage_monitor.check_activity(is_active)

@@ -45,7 +45,7 @@ class KeyboardMonitor:
             key_info = "Keyboard key pressed: None"
 
         activity_status = "Active" if data["activity_flag"] else "Inactive"
-        self.gui_var.set(f"{key_info}  |  Activity: {activity_status}")
+        self.gui_var.set(f"{key_info}  |  {activity_status}")
 
 
     def check_inactivity(self):

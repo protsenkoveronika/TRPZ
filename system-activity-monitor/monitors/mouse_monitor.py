@@ -37,7 +37,7 @@ class MouseMonitor:
 
         activity_status = "Active" if data['activity_flag'] else "Inactive"
 
-        self.gui_var.set(f"{position}  |  {last_click}  |  Activity: {activity_status}")
+        self.gui_var.set(f"{position}  |  {last_click}  |  {activity_status}")
 
 
     def on_move(self, x, y):

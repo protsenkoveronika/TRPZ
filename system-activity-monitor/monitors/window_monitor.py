@@ -1,10 +1,12 @@
 import datetime
 import pygetwindow as gw  # on Windows
+from repositories.monitoring_days_repository import MonitoringDaysRepository
 from repositories.window_repository import WindowRepository
 
 class WindowMonitor:
     def __init__(self, db_file, gui_var):
         self.repo = WindowRepository(db_file)
+        self.daysrepo = MonitoringDaysRepository(db_file)
         self.gui_var = gui_var
         self.current_window = None
         self.window_usage = {}
@@ -12,6 +14,11 @@ class WindowMonitor:
     def collect_data(self):
         active_window = self.get_active_window()
         active_window = self.sanitize_window_name(active_window)
+
+        if active_window == "Unknown":
+            self.check_midnight_reset()
+            print(self.window_usage)
+            return {"active_window": "Unknown", "usage_time": 0}
 
         if active_window != self.current_window:
             if self.current_window is not None:
@@ -25,8 +32,6 @@ class WindowMonitor:
         
         self.check_midnight_reset()
 
-        # print(self.window_usage)
-
         return {"active_window": self.current_window, "usage_time": self.window_usage[self.current_window]}
     
     def update_widget(self):
@@ -34,7 +39,30 @@ class WindowMonitor:
         self.gui_var.set(f"Active Window: {data['active_window']}")
 
     def save_data(self):
-        pass
+        if not self.window_usage:
+            print("No window data collected yet.")
+            return
+
+        today_date = datetime.datetime.now().strftime("%Y-%m-%d")
+        date_id = self.daysrepo.get_or_add_date_id(today_date)
+        if date_id is None:
+            print("Failed to save data: date_id could not be determined.")
+            return
+        
+        for window_name, time in self.window_usage.items():
+            window_id = self.repo.get_or_add_window_id(window_name)
+            if window_id is None:
+                print(f"Failed to save usage for window: {window_name} (window_id could not be determined).")
+                continue
+            
+            try:
+                self.repo.insert_window_usage(date_id, window_id, time)
+                print(f"Saved usage data for window: {window_name}, time: {time} seconds.")
+            except Exception as e:
+                print(f"Error saving usage data for window: {window_name}, time: {time}. Error: {e}")
+
+        self.window_usage = {}
+        # pass
 
     def sanitize_window_name(self, window_name):
         if window_name:
@@ -45,10 +73,6 @@ class WindowMonitor:
                 sanitized_name = window_name.strip()
             return sanitized_name.strip()
         return "Unknown"
-
-    def get_window_usage(self):
-        print(self.window_usage)
-        return self.window_usage
 
     def update_window_usage(self, window_name):
         usage_time = self.window_usage.get(window_name, 0)
@@ -65,17 +89,7 @@ class WindowMonitor:
             print(f"Error getting active window: {e}")
             return "Unknown"
 
-    def save_usage_data(self):
-        current_date = datetime.datetime.now().strftime("%Y-%m-%d")
-        if not self.repo.current_date_exists(current_date):
-            self.repo.insert_current_date()
-
-        for window_name, usage_time in self.window_usage.items():
-            if window_name != "Unknown":
-                self.repo.insert_window_usage(window_name, usage_time)
-
     def check_midnight_reset(self):
         current_time = datetime.datetime.now().time()
         if current_time.hour == 0 and current_time.minute == 0:
-            self.save_usage_data()
-            self.window_usage = {}
+            self.save_data()

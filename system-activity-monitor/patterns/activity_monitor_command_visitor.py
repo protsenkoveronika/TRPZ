@@ -80,7 +80,18 @@ class TextReportVisitor(ReportVisitor):
         data = report.generate_periodic_report(start_date, end_date, report_type)
         if not data:
             return None
-        return f"Periodic Report ({start_date} - {end_date}):\n{self.format_data(data)}"
+        return f"Periodic Report ({start_date} - {end_date}):\n{self.format_periodic_data(data)}"
 
     def format_data(self, data):
         return "\n".join(f"{key}: {value}" for key, value in data.items()) if data else "No data available."
+    
+    def format_periodic_data(self, data):
+        if not data:
+            return "No data available."
+        
+        formatted = []
+        for date, daily_data in data.items():
+            formatted.append(f"{date}:")
+            for key, value in daily_data.items():
+                formatted.append(f"  {key}: {value}")
+        return "\n".join(formatted)

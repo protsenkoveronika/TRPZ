@@ -10,8 +10,23 @@ class WindowMonitor:
         self.gui_var = gui_var
         self.current_window = None
         self.window_usage = {}
+        self.is_active = True
+        self.last_activity_time = None
+
+    def check_activity(self, is_active):
+        if not is_active and self.is_active:
+            self.stop_tracking()
+
+        self.is_active = is_active
+
+    def stop_tracking(self):
+        if self.current_window:
+            self.update_window_usage(self.current_window)
 
     def collect_data(self):
+        if not self.is_active:
+            return {"active_window": "Unknown", "usage_time": 0}
+        
         active_window = self.get_active_window()
         active_window = self.sanitize_window_name(active_window)
 

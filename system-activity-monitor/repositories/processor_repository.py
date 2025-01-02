@@ -47,18 +47,18 @@ class ProcessorRepository:
             print(f"Error retrieving processor usage data: {e}")
             return None
         
-    def delete_last_processor_usage(self):
-        try:
-            cursor = self.connection.cursor()
-            # Delete the last entry based on the most recent timestamp
-            cursor.execute("""
-                DELETE FROM ComputerUsage
-                WHERE compusage_id = 1
-            """)
-            self.connection.commit()
-            print("Last processor usage deleted successfully.")
-        except sqlite3.Error as e:
-            print(f"Error deleting last processor usage: {e}")
+    # def delete_last_processor_usage(self):
+    #     try:
+    #         cursor = self.connection.cursor()
+    #         # Delete the last entry based on the most recent timestamp
+    #         cursor.execute("""
+    #             DELETE FROM ComputerUsage
+    #             WHERE compusage_id = 1
+    #         """)
+    #         self.connection.commit()
+    #         print("Last processor usage deleted successfully.")
+    #     except sqlite3.Error as e:
+    #         print(f"Error deleting last processor usage: {e}")
 
 
 # repo = ProcessorRepository("db.sqlite")

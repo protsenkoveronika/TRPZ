@@ -8,7 +8,7 @@ class MouseMonitor:
         self.last_click_event = None
         self.activity_flag = True
         self.last_mouse_activity_time = time.time()
-        self.inactivity_threshold = 10
+        self.inactivity_threshold = 10*60
         self.gui_var = gui_var
         
         self.listener = mouse.Listener(

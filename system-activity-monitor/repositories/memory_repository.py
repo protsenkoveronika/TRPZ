@@ -46,19 +46,19 @@ class MemoryRepository:
             print(f"Error retrieving memory usage data: {e}")
             return None
         
-    def delete_last_memory_usage(self):
-        """Delete the most recent row from the ProcessorUsage table."""
-        try:
-            cursor = self.connection.cursor()
-            # Delete the last entry based on the most recent timestamp
-            cursor.execute("""
-                DELETE FROM MemoryUsage
-                WHERE memusage_id = (SELECT memusage_id FROM MemoryUsage ORDER BY memusage_id DESC LIMIT 1)
-            """)
-            self.connection.commit()
-            print("Last processor usage deleted successfully.")
-        except sqlite3.Error as e:
-            print(f"Error deleting last processor usage: {e}")
+    # def delete_last_memory_usage(self):
+    #     """Delete the most recent row from the ProcessorUsage table."""
+    #     try:
+    #         cursor = self.connection.cursor()
+    #         # Delete the last entry based on the most recent timestamp
+    #         cursor.execute("""
+    #             DELETE FROM MemoryUsage
+    #             WHERE memusage_id = (SELECT memusage_id FROM MemoryUsage ORDER BY memusage_id DESC LIMIT 1)
+    #         """)
+    #         self.connection.commit()
+    #         print("Last processor usage deleted successfully.")
+    #     except sqlite3.Error as e:
+    #         print(f"Error deleting last processor usage: {e}")
 
 
 # repo = MemoryRepository("db.sqlite")

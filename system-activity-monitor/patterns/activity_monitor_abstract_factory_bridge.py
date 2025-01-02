@@ -8,7 +8,6 @@ from monitors.keyboard_monitor import KeyboardMonitor
 from monitors.computer_usage_monitor import ComputerUsage
 
 
-
 class AbstractFactory(ABC):
     @abstractmethod
     def create_processor_monitor(self, db_file, gui_var) -> AbstractProcessorMonitor:
@@ -45,9 +44,9 @@ class ConcreteWindowsFactory(AbstractFactory):
         implementation = MemoryMonitorImplementation(db_file, gui_var)
         return SaveableMonitorAbstraction(implementation)
     
-    def create_window_monitor(self, db_file, gui_var) -> SaveableMonitorAbstraction:
+    def create_window_monitor(self, db_file, gui_var) -> ExceptionalMonitorAbstraction:
         implementation = WindowMonitorImplementation(db_file, gui_var)
-        return SaveableMonitorAbstraction(implementation)
+        return ExceptionalMonitorAbstraction(implementation)
     
     def create_mouse_monitor(self, gui_var) -> ActivityFlagMonitorAbstraction:
         implementation = MouseMonitorImplementation(gui_var)
@@ -87,6 +86,10 @@ class AbstractWindowMonitor(ABC):
 
     @abstractmethod
     def save_data(self):
+        pass
+
+    @abstractmethod
+    def check_activity(self, is_active: bool) -> bool:
         pass
 
 class AbstractMouseMonitor(ABC):
@@ -199,7 +202,7 @@ class MemoryMonitorImplementation(SaveableMonitorImplementation):
     def save_data(self) -> None:
         self.memory_usage.save_data()
 
-class WindowMonitorImplementation(SaveableMonitorImplementation):
+class WindowMonitorImplementation(ExceptionalMonitorImplementation):
     def __init__(self, db_file, gui_var):
         self.window_monitor = WindowMonitor(db_file, gui_var)
 
@@ -208,6 +211,9 @@ class WindowMonitorImplementation(SaveableMonitorImplementation):
 
     def save_data(self) -> None:
         self.window_monitor.save_data()
+
+    def check_activity(self, is_active: bool) -> bool:
+        return self.window_monitor.check_activity(is_active)
         
 class MouseMonitorImplementation(ActivityFlagMonitorImplementation):
     def __init__(self, gui_var):

@@ -32,18 +32,18 @@ class MonitoringDaysRepository:
             print(f"Error in get_or_add_date_id: {e}")
             return None
 
-    def delete_last_date(self):
-        """Delete the most recent date from the MonitoringDates table."""
-        try:
-            cursor = self.connection.cursor()
-            cursor.execute("""
-                DELETE FROM MonitoringDates
-                WHERE date = (SELECT date FROM MonitoringDates ORDER BY date DESC LIMIT 1)
-            """)
-            self.connection.commit()
-            print("Last date deleted successfully.")
-        except sqlite3.Error as e:
-            print(f"Error deleting last date: {e}")
+    # def delete_last_date(self):
+    #     """Delete the most recent date from the MonitoringDates table."""
+    #     try:
+    #         cursor = self.connection.cursor()
+    #         cursor.execute("""
+    #             DELETE FROM MonitoringDates
+    #             WHERE date = (SELECT date FROM MonitoringDates ORDER BY date DESC LIMIT 1)
+    #         """)
+    #         self.connection.commit()
+    #         print("Last date deleted successfully.")
+    #     except sqlite3.Error as e:
+    #         print(f"Error deleting last date: {e}")
 
 
 # # Create an instance of the repository

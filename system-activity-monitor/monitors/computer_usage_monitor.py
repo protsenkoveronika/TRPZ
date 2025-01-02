@@ -7,7 +7,6 @@ class ComputerUsage:
     def __init__(self, db_file, gui_var):
         self.repo = ComputerUsageRepository(db_file)
         self.daysrepo = MonitoringDaysRepository(db_file)
-        self.db_file = db_file
         self.gui_var = gui_var
         self.active_time = 0
         self.is_active = False

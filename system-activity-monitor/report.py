@@ -23,7 +23,7 @@ class Report:
             usage_by_time[time].append(usage)
             
         aggregated_data = {
-            time: sum(usages) for time, usages in usage_by_time.items()
+            time: round(sum(usages),2) for time, usages in usage_by_time.items()
         }
 
         return aggregated_data
@@ -47,7 +47,7 @@ class Report:
                     self.computerusagemonitor.save_data()
                 data = self.windowrepo.get_window_usage_by_date(date)
                 data = self.aggregate_data(data)
-                browser_names = ["Google Chrome", "Firefox", "Safari", "Edge", "Opera"]
+                browser_names = ["Google Chrome", "Firefox", "Safari", "Microsoft Edge", "Opera"]
                 filtered_data = {
                     name: usage 
                     for name, usage in data.items() 
@@ -61,6 +61,7 @@ class Report:
                 else:
                     browser_percentage = 0
                 formatted_data = {'Total usage': total_usage_sum, 'Browser usage': filtered_sum, 'Percent of browser usage': round(browser_percentage,2)}
+                print(formatted_data)
                 return formatted_data
             
             elif report_type == 3: # memory
@@ -72,15 +73,33 @@ class Report:
                 if is_current_date(date):
                     self.computerusagemonitor.save_data()
                 data = self.computerusagerepo.get_computer_usage_by_date(date)
-                data={'Total usage': sum(data)}
+                formatted_data={'Total usage': round(sum(data), 2)}
+                print(formatted_data)
                 return formatted_data
                 
             elif report_type == 5: # programs usage
                 if is_current_date(date):
                     self.windowmonitor.save_data()
                 data = self.windowrepo.get_window_usage_by_date(date)
+
+            elif report_type == 6: # average cpu
+                if is_current_date(date):
+                    self.processormonitor.save_data()
+                data = self.processorrepo.get_processor_usage_by_date(date)
+                usage_values = [usage for _, usage in data]
+                average = {'Average processor usage': round(sum(usage_values) / len(usage_values), 2)}
+                return average
+
+            elif report_type == 7: # average memory
+                if is_current_date(date):
+                    self.memorymonitor.save_data()
+                data = self.memoryrepo.get_memory_usage_by_date(date)
+                usage_values = [usage for _, usage in data]
+                average = {'Average processor usage': round(sum(usage_values) / len(usage_values), 2)}
+                return average
                 
             formatted_data = self.aggregate_data(data)
+            print(formatted_data)
             return formatted_data
 
         except Exception as e:
@@ -89,7 +108,7 @@ class Report:
 
     def generate_periodic_report(self, start_date, end_date, report_type):
         try:
-            data = []
+            data = {}
             
             start = datetime.datetime.strptime(start_date, "%Y-%m-%d")
             end = datetime.datetime.strptime(end_date, "%Y-%m-%d")
@@ -97,14 +116,14 @@ class Report:
             
             current_date = start
             while current_date <= end:
+                print(current_date)
                 date_str = current_date.strftime("%Y-%m-%d")
                 daily_data = self.generate_daily_report(date_str, report_type)
                 if daily_data:
-                    data.append({
-                        "date": date_str,
-                        "data": daily_data
-                    })
+                    data[date_str] = daily_data
                 current_date += delta
+
+            return data
             
         except Exception as e:
             print(f"Error generating periodic report: {e}")

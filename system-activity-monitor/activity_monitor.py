@@ -1,6 +1,5 @@
 import json
 import threading
-import time
 import datetime
 from tkinter import Tk, Text, Scrollbar, Label, StringVar, Button, Toplevel, Entry, Frame, Radiobutton, IntVar
 from patterns.activity_monitor_iterator import MonitorIterator
@@ -36,7 +35,6 @@ class ActivityMonitor:
         self.saveable_monitors = [
             self.factory.create_processor_monitor(self.db_file, self.gui_vars["cpu_usage"]),
             self.factory.create_memory_monitor(self.db_file, self.gui_vars["memory_usage"]),
-            self.factory.create_window_monitor(self.db_file, self.gui_vars["active_window"]),
         ]
 
         self.flag_monitors = [
@@ -46,14 +44,15 @@ class ActivityMonitor:
 
         self.exceptional_monitors = [
             self.factory.create_computer_usage_monitor(self.db_file, self.gui_vars["computer_usage"]),
+            self.factory.create_window_monitor(self.db_file, self.gui_vars["active_window"]),
         ]
 
         self.report = Report(
             self.db_file,
             processor_monitor=self.saveable_monitors[0],
             memory_monitor=self.saveable_monitors[1],
-            window_monitor=self.saveable_monitors[2],
-            computer_usage_monitor=self.exceptional_monitors[0]
+            computer_usage_monitor=self.exceptional_monitors[0],
+            window_monitor=self.exceptional_monitors[1],
         )
 
     def setup_main_window(self):
@@ -103,7 +102,6 @@ class ActivityMonitor:
                 monitor.update_widget()
 
             self.check_activity()
-            # time.sleep(1)
         pass
 
     def check_activity(self):
@@ -115,6 +113,7 @@ class ActivityMonitor:
         print("Saving data...")
         for monitor in self.saveable_monitors + self.exceptional_monitors:
             monitor.save_data()
+            pass
         self.is_monitoring = False
 
     def start_gui(self):
@@ -156,6 +155,10 @@ class ActivityMonitor:
 
                 start_date_obj = datetime.datetime.strptime(start_date, "%Y-%m-%d")
                 end_date_obj = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+
+                if start_date_obj == end_date_obj:
+                    print("Start and End date cannot be the same.")
+                    return
 
                 if start_date_obj > end_date_obj:
                     print("Start date cannot be later than end date.")
@@ -268,10 +271,10 @@ class ActivityMonitor:
             Label(report_type_frame, text="Choose Type of Report:", font=("Arial", 12, "bold")).pack(anchor="w", pady=5)
 
             Radiobutton(report_type_frame, text="Average CPU Usage by Days", variable=report_type_var, value=6).pack(anchor="w", padx=10)
-            Radiobutton(report_type_frame, text="Browser Usage Percentage by Days", variable=report_type_var, value=7).pack(anchor="w", padx=10)
-            Radiobutton(report_type_frame, text="Average Memory Usage by Days", variable=report_type_var, value=8).pack(anchor="w", padx=10)
-            Radiobutton(report_type_frame, text="Computer Uptime by Days", variable=report_type_var, value=9).pack(anchor="w", padx=10)
-            Radiobutton(report_type_frame, text="Top 5 Programs Used by Days", variable=report_type_var, value=10).pack(anchor="w", padx=10)
+            Radiobutton(report_type_frame, text="Browser Usage Percentage by Days", variable=report_type_var, value=2).pack(anchor="w", padx=10)
+            Radiobutton(report_type_frame, text="Average Memory Usage by Days", variable=report_type_var, value=7).pack(anchor="w", padx=10)
+            Radiobutton(report_type_frame, text="Computer Uptime by Days", variable=report_type_var, value=4).pack(anchor="w", padx=10)
+            Radiobutton(report_type_frame, text="Programs Used by Days", variable=report_type_var, value=5).pack(anchor="w", padx=10)
 
         def update_input_fields():
             day_frame.pack_forget()
